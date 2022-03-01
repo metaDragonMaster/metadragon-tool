@@ -1,0 +1,30 @@
+@for $i from 1 through 3 {
+	.h-#{$i} {
+		height: $i * 10px;
+	}
+}
+
+@for $i from 1 to 3 {
+	.w-#{$i} {
+		width: $i * 10px;
+	}
+}
+
+$num: 12;
+
+@while $num < 18 {
+	.f-#{$num} {
+		font-size: #{$num}px;
+	}
+
+	$num: $num+2;
+}
+
+
+$list: 4 6 8 10 12;
+
+@each $i in $list {
+	.p-#{$i} {
+		padding: #{$i}px;
+	}
+}

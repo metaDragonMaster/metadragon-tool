@@ -1,0 +1,67 @@
+@import './theme/theme.scss';
+
+@mixin mixin-limit-max-width {
+	min-width: 1500px;
+	padding: 0 calc((100% - 1500px) / 2 + 30px);
+}
+
+// .limit-max-width,
+// div[limit-max-width] {
+// 	@include mixin-limit-max-width;
+// }
+
+.limit-max-width-media {
+	@media screen and (min-width: 1500px) {
+		@include mixin-limit-max-width;
+	}
+
+	@media screen and (max-width: 1499px) {
+		padding: 0 25px;
+	}
+}
+
+.theme-font-color {
+	color: $font-color
+}
+
+.theme-type {
+	@include GradualBGColor;
+}
+
+.theme-bg-blur {
+	@include BGBlur;
+}
+
+.theme-dialog {
+	@include ThemeDialog;
+	.el-dialog__title,
+	.el-dialog__body  {
+		color: $font-color;
+	}
+}
+
+.theme-text {
+	@include GradualText;
+	display: inline-block;
+}
+
+.pseudo-block-class {
+	@include PseudoBlockClass;
+}
+
+.pseudo-block-class-after {
+	@include PseudoBlockClassAfter;
+}
+
+.pseudo-block-class-before {
+	@include PseudoBlockClassBefore;
+}
+
+.child-center {
+	@include ChildCenter;
+}
+.child-center-column {
+	@include ChildCenter;
+	flex-direction: column;
+}
+

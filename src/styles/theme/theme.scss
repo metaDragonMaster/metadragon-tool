@@ -1,0 +1,77 @@
+@import "./variable.scss";
+// @import "@/styles/theme/variable.scss";
+
+@mixin GradualBGColor {//渐变背景
+	background-image: $theme-linear-gradient;
+}
+
+@mixin GradualBoxShadow {//阴影
+	box-shadow: 0 0 4px 0 rgba($color: $linear-l, $alpha: 1);
+}
+
+@mixin GradualText { //文字渐变色
+	background-image: linear-gradient(135deg, $linear-l, $linear-r);
+	background-clip: text;
+	color: transparent;
+}
+
+@mixin Button {
+	cursor: pointer;
+	text-align: center;
+	&:not(.child-center) {
+		display: inline-block;
+	}
+}
+@mixin ThemeButton {
+	@include GradualBGColor;
+	@include Button;
+	box-shadow: $theme-box-shadow-inset;
+	color: $font-color;
+	// border: 1px solid transparent;
+}
+
+@mixin ChildCenter { //单个居中
+	// display: grid;
+	// place-items: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+@mixin PseudoBlockClassBefore {
+	position: relative;
+	&::before {
+		content: '';
+		display: block;
+		position: absolute;
+	}
+}
+@mixin PseudoBlockClassAfter {
+	position: relative;
+	&::after {
+		content: '';
+		display: block;
+		position: absolute;
+	}
+}
+
+
+@mixin PseudoBlockClass {
+	position: relative;
+	&::before,
+	&::after {
+		content: '';
+		display: block;
+		position: absolute;
+	}
+}
+
+@mixin BGBlur {
+	background: rgba(255, 255, 255, 0.2);
+}
+
+@mixin ThemeDialog {
+	background-color: $back-color;
+	border-radius: $radius-square-big;
+}
+

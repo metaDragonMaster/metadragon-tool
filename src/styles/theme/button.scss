@@ -1,0 +1,30 @@
+@import "./theme.scss";
+
+.theme-button {
+	&:not(.theme-button-dotted,.theme-button-blur) {
+		@include ThemeButton;
+	}
+}
+.theme-button-square {
+	//方形
+	// @include ThemeButton;
+	border-radius: $radius-square; //6px
+}
+
+.theme-button-circular {
+	//圆形
+	// @include ThemeButton;
+	border-radius: $radius-circular; //10rem
+}
+
+.theme-button-dotted {
+	@include Button;
+	border: 1px dotted #FFF;
+	border-radius: $radius-square; //6px
+}
+
+.theme-button-blur {
+	@include Button;
+	background-color: #5B5070;
+	border-radius: $radius-square; //6px
+}

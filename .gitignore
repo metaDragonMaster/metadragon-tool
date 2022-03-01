@@ -1,6 +1,8 @@
 .DS_Store
 node_modules
+/.history
 /dist
+/metagame-tool
 
 
 # local env files
