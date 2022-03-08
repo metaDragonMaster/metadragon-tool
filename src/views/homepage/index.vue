@@ -44,7 +44,6 @@
 <script setup>
 import Banner from "./modules/Banner"
 import ThemeButton from "@/components/themeButton"
-// import { JustifiedInfiniteGrid } from "@egjs/vue3-infinitegrid";
 
 const module2GameList = [
     {

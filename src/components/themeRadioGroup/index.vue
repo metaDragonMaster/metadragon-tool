@@ -7,7 +7,7 @@
                 :key="item[keyAttr] || index"
                 :ref="el => el && RefList.push(el)"
                 :class="{ 'active': activeIndex == index }"
-            >{{ item.label }}</li>
+            >{{ item[labelAttr] }}</li>
             <div class="after theme-type" ref="RefAfter"></div>
         </ul>
     </div>
@@ -37,6 +37,11 @@ const props = defineProps({
         type: String,
         required: true,
     },
+	labelAttr: {
+		type: String,
+        required: false,
+		default: 'label'
+	},
     // active: {
     //     type: [Number, String],
     //     required: true,
@@ -66,7 +71,8 @@ const activeIndex = computed(() => {
 const checked = (item) => {
     // emits('update:active', item[keyAttr])
     active.value = item[keyAttr]
-    emits('change', item[keyAttr])
+    emits('change', item)
+    // emits('change', item[keyAttr])
 }
 watch(() => [active.value, clientWidth.value], () => {
     startAfter()

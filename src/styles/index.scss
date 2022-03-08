@@ -1,5 +1,7 @@
 @import "./font";
 @import "./flex";
+@import "./element";
+// @import "./theme/button";
 @import "./class";
 
 *,
@@ -52,6 +54,10 @@ button {
 	cursor: pointer;
 	color: inherit;
 	border: 0;
+	// border: 1px solid transparent;
 	background-color: transparent;
 	font-size: inherit;
+	&[disabled] {
+		cursor: not-allowed;
+	}
 }

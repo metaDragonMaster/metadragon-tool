@@ -1,0 +1,413 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "../../../access/AccessControlEnumerable1.sol";
+import "../../../utils/math/SafeMath.sol";
+import "../../../utils/Counters.sol";
+import "./IMetaGameTool.sol";
+
+interface IPancakeRouter01 {
+
+    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
+
+}
+
+
+contract MetaGameTool is Context, AccessControlEnumerable1,IMetaGameTool {
+
+    using Counters for Counters.Counter;
+    mapping(address => bool) private user;
+
+    address private _root_address ;
+
+    address private _pancakeRouter ;
+
+    address private  _BNB ;
+    address private _usd ;
+
+    address[]  t = new address[](2);
+
+
+
+
+    uint256 private _register_fee;
+    uint256 private _script_fee;
+    uint256 private _project_fee;
+
+    uint256 private _platform_fee;
+    Counters.Counter private _script_id;
+    Counters.Counter private _project_id2;
+
+
+
+    //_project_id _script_id
+    mapping(uint256 => uint256[]) private _script_index;
+
+    mapping(address => uint256[]) private _project_owner;
+
+    mapping(uint256 => _data_project) private _project_data;
+
+    mapping(address => uint256) private _project_user_income;
+
+    uint256 private _platform_income;
+
+
+
+
+
+    struct _data_project {
+        bool _f;
+        string name;
+        uint256 index;
+        uint256 id;
+        address contract_address;
+        address owner;
+        string url;
+    }
+
+
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant Admin_ROLE = keccak256("Admin_ROLE");
+
+
+
+
+    mapping(uint256 => _data_script[]) private _script_data;
+
+    struct _data_script {
+        bool _f;
+        uint256 _script_amount;
+        uint256 _type;
+        uint256 _max;
+        uint256 _project_id;
+        uint256 id;
+        address owner;
+        string url;
+
+    }
+
+
+
+    mapping(address => _script2[]) private _user_script;
+
+    struct _script2 {
+        bool _f;
+        address _add;
+        uint256 _script_amount;
+        uint256 _project_id;
+        uint256 _script_id;
+        uint256[] _id;
+        uint256 time;
+        uint256 state;
+    }
+
+
+    //设置任务脚本执行状态
+    function set_user_script_state(bool _f,uint256 _project_id,uint256 _script_id_,address _address, uint256 _user_task_location,uint256 _state) public virtual returns(bool){
+       // require(user[_msgSender()] || hasRole(MINTER_ROLE, _msgSender()) , "Illegal user");
+
+        require(_script_data[_project_id][_script_id_].owner == _msgSender() || hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+
+        require(_user_script[_address][_user_task_location]._project_id == _project_id || hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+
+        _user_script[_address][_user_task_location]._f = _f;
+        _user_script[_address][_user_task_location].state = _state;
+        return true;
+
+
+    }
+
+    
+
+    //添加任务
+    function add_task(address _add, uint256 _script_amount,uint256 _project_id,uint256 _script_id_,uint256[] memory _id,uint256 time,uint amount) public payable{
+
+        require(user[_msgSender()], "Illegal user");
+
+        require(_project_data[_project_id]._f , "Illegal project ID");
+        require(_script_data[_project_id][_script_id_]._f , "Illegal script ID");
+
+
+        _user_script[_msgSender()].push(_script2(true,_add,_script_amount,_project_id,_script_id_,_id,time,1));
+        require(_script_data[_project_id][_script_id_]._script_amount == amount, "The price fluctuates too much, please pay again");
+
+
+        require(amount == msg.value, "pay amount  != msg.value");
+
+        uint256 f = amount / 100 * (100 - _platform_fee);
+        uint256 b = amount -f;
+
+        //amount / 100 * (100 - _platform_fee);
+        (bool success,) = _script_data[_project_id][_script_id_].owner.call{value: f}("");
+        require(success, "Failed to send money");
+
+
+        (bool success2,) = _root_address.call{value: b}("");
+        require(success2, "Failed to send money");
+
+        _set_platform_income(amount / 100 * _platform_fee);
+
+
+
+        uint256 _user_task_location = _user_script[_msgSender()].length;
+
+
+        uint256 _income= _project_user_income[_msgSender()];
+
+        _project_user_income[_msgSender()] = _income + get_BNB_AmountOut(amount / 100 * (100 - _platform_fee));
+
+
+
+     emit script(_msgSender(),_add,_script_amount,_project_id,_script_id_,_id,time,_user_task_location);
+
+
+    }
+
+
+
+
+
+    constructor(){
+
+        _setupRole(MINTER_ROLE, _msgSender());
+       //_setRoleAdmin(Admin_ROLE,MINTER_ROLE);
+
+    }
+
+
+    //注册用户
+    function register(address sender2,uint256 amount) public payable {
+        require(!user[sender2], "already registered");
+        uint256 re_BNB = get_BNB_AmountOut(_register_fee);
+
+        require(amount >(re_BNB /100 * 98) && amount< (re_BNB /100 * 102) , "The price fluctuates too much, please pay again");
+        (bool success,) = _root_address.call{value: amount}("");
+        require(success, "Failed to send money");
+        _set_platform_income(amount);
+        user[_msgSender()] = true;
+    }
+
+
+
+
+
+    //添加项目数据
+    function set_project_data(address contract_address,string memory name,uint256 amount,string memory url) public payable{
+
+        require(user[_msgSender()], "Illegal user");
+
+        uint256 re_BNB = get_BNB_AmountOut(_project_fee);
+        require(amount >(re_BNB /100 * 98) && amount< (re_BNB /100 * 102) , "The price fluctuates too much, please pay again");
+        (bool success,) = _root_address.call{value: amount}("");
+        require(success, "Failed to send money");
+        _set_platform_income(amount);
+        uint256 p = _project_id2.current();
+        _project_data[p].name = name;
+        _project_data[p]._f = true;
+        _project_data[p].owner = _msgSender();
+        _project_data[p].id = p;
+        _project_data[p].contract_address = contract_address;
+        _project_data[p].url = url;
+        _project_id2.increment();
+        _project_owner[_msgSender()].push(p);
+
+        _project_user_income[_msgSender()] = 0;
+
+    }
+
+    //设置项目排序
+    function set_project_index(uint256 _project_id,uint256 index) public virtual {
+
+        require(hasRole(MINTER_ROLE, _msgSender()), "set_project_index: must have role");
+        _project_data[_project_id].index =index;
+
+
+    }
+
+
+
+    //添加脚本数据
+    function set_script_data(uint256 _script_amount,uint256 _type,string memory url,uint256 _max,uint256 _project_id_,uint256 amount) public payable{
+
+        require(user[_msgSender()], "Illegal user");
+        uint256 re_BNB = get_BNB_AmountOut(_script_fee);
+
+        require(amount >(re_BNB /100 * 98) && amount< (re_BNB /100 * 102) , "The price fluctuates too much, please pay again");
+        (bool success,) = _root_address.call{value: amount}("");
+        require(success, "Failed to send money");
+        _set_platform_income(amount);
+
+   
+        uint256 _id = _script_data[_project_id_].length;
+        _script_data[_project_id_].push(_data_script(true,_script_amount,_type,_max,_project_id_,_id,_msgSender(),url));
+        _script_index[_project_id_].push(_id);
+
+        _script_id.increment();
+
+    }
+
+
+
+
+
+    //用户是否注册
+    function isRegister(address sender2) public view returns(bool){
+
+        return user[sender2];
+    }
+
+    //设置收款地址
+    function setRoot_address(address root) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+         _root_address = root;
+    }
+
+
+    //添加用户
+    function add_user(address user_address) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        user[user_address] = true;
+    }
+
+    //封号
+    function set_user(address user_address) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        user[user_address] = false;
+    }
+
+
+    //设置注册费用
+    function set_register_fee(uint256 amount) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        _register_fee = amount;
+    }
+
+    //设置注册费用
+    function set_script_fee(uint256 amount) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        _script_fee = amount;
+    }
+
+
+    //设置路由地址
+    function set_pancakeRouter(address _pancakeRouter_) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        _pancakeRouter = _pancakeRouter_;
+    }
+
+
+
+    //设置bnb和usd地址
+    function set_BNB_usd_address(address _BNB_,address _usd_) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        t[0] = _usd_;
+        t[1] = _BNB_;
+
+    }
+
+
+
+    //设置项目注册费用
+    function set_project_fee(uint256 amount) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        _project_fee = amount;
+    }
+
+    //禁用项目
+    function set_project_state(bool state,uint256 _project_id_) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        _project_data[_project_id_]._f = state;
+    }
+
+    //禁用脚本
+    function set_script_state(bool state,uint256 _project_id_,uint256 _script_id_) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "setRoot_address: must have role");
+        _script_data[_project_id_][_script_id_]._f = state;
+    }
+
+    //设置平台费率
+    function set_platform_fee(uint256 _platform_fee_) public virtual{
+        require(hasRole(MINTER_ROLE, _msgSender()), "set_platform_fee: must have role");
+        _platform_fee = _platform_fee_;
+    }
+
+    //设置平台收益
+    function _set_platform_income(uint256 _income) internal virtual{
+        //require(hasRole(MINTER_ROLE, _msgSender()), "set_platform_fee: must have role");
+       _platform_income = _platform_income + _income;
+    }
+
+
+
+    //获取项目的数量
+    function getProject_index() public view returns(uint256){
+        return _project_id2.current();
+    }
+
+    //获取项目脚本数据组
+    function get_project_Script_data(uint256 _project_id_) public view returns(_data_script[] memory){
+
+        return _script_data[_project_id_];
+
+    }
+
+    //获取项目脚本id数组
+    function get_project_Script_ids(uint256 _project_id_) public view returns(uint256[] memory){
+
+        return _script_index[_project_id_];
+
+    }
+
+    //获取指定usdt 兑换 bnb价格
+    function get_BNB_AmountOut(uint256 _usd_price) public view returns(uint256){
+
+        return IPancakeRouter01(_pancakeRouter).getAmountsOut(_usd_price,t)[1];
+
+    }
+
+    function get_project_BNB_AmountOut() public view returns(uint256){
+
+        return IPancakeRouter01(_pancakeRouter).getAmountsOut(_project_fee,t)[1];
+
+    }
+
+    function get_script_BNB_AmountOut() public view returns(uint256){
+
+        return IPancakeRouter01(_pancakeRouter).getAmountsOut(_script_fee,t)[1];
+
+    }
+
+    function get_register_BNB_AmountOut() public view returns(uint256){
+
+        return IPancakeRouter01(_pancakeRouter).getAmountsOut(_register_fee,t)[1];
+
+    }
+
+
+    function get_platform_income() public view returns(uint256){
+        require(hasRole(MINTER_ROLE, _msgSender()), "set_platform_fee: must have role");
+        return _platform_income;
+
+    }
+
+
+    function get_project_owner(address _project_user_) public view returns(uint256[] memory){
+
+        return _project_owner[_project_user_];
+
+    }
+
+
+    //查询脚本执行状态
+    function get_user_script_state(address _user_address,uint256 _user_task_location) public view returns(uint256){
+
+        return _user_script[_user_address][_user_task_location].state;
+
+    }
+
+    
+
+
+
+}

@@ -1,5 +1,9 @@
 <template>
-    <div class="white-book-view">
-        white-book
+    <div>
+        <BaseEmpty type="develop" ></BaseEmpty>
     </div>
 </template>
+
+<script setup>
+import BaseEmpty from "@/components/baseEmpty"
+</script>

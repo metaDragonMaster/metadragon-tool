@@ -1,7 +1,7 @@
 <template>
-    <div class="theme-button" :class="className">
+	<button class="theme-button" :class="className" :disabled="type=='disabled'">
         <slot></slot>
-    </div>
+    </button>
 </template>
 
 <script setup>
@@ -16,7 +16,13 @@ const props = defineProps({
         readonly: true,
         required: false,
         validator: (value) => {
-            return ['square', 'circular', 'dotted','blur'].includes(value);
+            return [
+				'square', //方形
+				'circular', //两边圆
+				'dotted', //虚线
+				'blur', //稍稍有颜色
+				'disabled', //禁用
+			].includes(value);
         }
     }
 })

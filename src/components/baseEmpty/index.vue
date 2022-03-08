@@ -1,7 +1,7 @@
 <template>
     <div class="base-empty child-center-column">
         <img :src="emptyType.image" alt />
-        <p>{{props.title}}</p>
+        <p>{{props.title||emptyType.title}}</p>
     </div>
 </template>
 
@@ -33,10 +33,12 @@ const emptyTypes = [
     {
         type: 'data',
         image: require("@/assets/icons/icon-dataEmpty.png"),
+        title: '还没有数据哦...',
     },
     {
         type: 'develop',
-        image: require("@/assets/icons/icon-developing.png")
+        image: require("@/assets/icons/icon-developing.png"),
+        title: '正在全力开发中~敬请期待',
     },
 ]
 

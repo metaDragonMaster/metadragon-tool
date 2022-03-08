@@ -58,6 +58,10 @@ const navList = computed(() => ({
         title: t('headNav.becomeScript'),
         path: '/becomeScript',
     },
+	demo: {
+        title: 'demo',
+        path: '/demo',
+    },
 }))
 // watchEffect(() => {
 //     console.log(navList.value);

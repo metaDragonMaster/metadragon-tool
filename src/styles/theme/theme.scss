@@ -15,16 +15,10 @@
 	color: transparent;
 }
 
-@mixin Button {
-	cursor: pointer;
-	text-align: center;
-	&:not(.child-center) {
-		display: inline-block;
-	}
-}
+
 @mixin ThemeButton {
 	@include GradualBGColor;
-	@include Button;
+	// @include Button;
 	box-shadow: $theme-box-shadow-inset;
 	color: $font-color;
 	// border: 1px solid transparent;

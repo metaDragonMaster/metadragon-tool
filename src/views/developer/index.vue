@@ -1,9 +1,13 @@
 <template>
-    <div>developer</div>
+    <div>
+        <BaseEmpty type="develop" ></BaseEmpty>
+    </div>
 </template>
 
-<script>
+<script setup>
+import BaseEmpty from "@/components/baseEmpty"
 </script>
+
 
 <style>
 </style>

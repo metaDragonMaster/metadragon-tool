@@ -10,3 +10,17 @@
     display: inline-block;
     margin-left: auto;
 }
+.flex-only-pc {
+	@media screen and (min-width: 769px) {
+		display: flex;
+		align-items: center;
+	}
+	.right {
+		display: initial;
+		margin-left: initial;
+		@media screen and (min-width: 769px) {
+			display: block;
+    		margin-left: auto;
+		}
+	}
+}
