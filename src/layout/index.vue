@@ -40,6 +40,7 @@ onBeforeUnmount(() => {
 const useStoreWeb3js = UseStoreWeb3js();
 const { haveAuth, startWeb3 } = useStoreWeb3js;
 if (!haveAuth) {
+	console.log('获取web3')
 	startWeb3();
 }
 

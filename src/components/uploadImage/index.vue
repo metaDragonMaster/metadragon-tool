@@ -1,24 +1,26 @@
 <template>
 	<div class="upload-image">
-		<div v-show="!showPreview" class="upload-event-traget" @click="selectImageFile">
-			<span>点击上传</span>
-			<input
-				class="file-select"
-				ref="fileSelect"
-				type="file"
-				name="file"
-				:accept="accept"
-				@change="getFile"
-			/>
-		</div>
-		<div v-show="showPreview" class="upload-preview">
-			<el-image class="preview-image" :src="result.dataURL" @click="selectImageFile" />
-		</div>
-		<div v-show="showPreview">
+		<transition-group name="el-zoom-in-center" mode="out-in">
+			<div v-show="!showPreview" key="up" class="upload-event-traget" @click="selectImageFile">
+				<span>点击上传</span>
+				<input
+					class="file-select"
+					ref="fileSelect"
+					type="file"
+					name="file"
+					:accept="accept"
+					@change="getFile"
+				/>
+			</div>
+			<div v-show="showPreview" key="img" class="upload-preview">
+				<el-image class="preview-image" :src="result.dataURL" @click="selectImageFile" />
+			</div>
+		</transition-group>
+		<!-- <div v-show="showPreview">
 			<el-button @click="uploadImageToSomewhere">上传图片</el-button>
-		</div>
+		</div>-->
 		<el-dialog
-			v-model="dialogValue"
+			v-model="dialogHandler"
 			title="裁剪图片"
 			:close-on-click-modal="false"
 			:close-on-press-escape="false"
@@ -29,14 +31,14 @@
 			<!-- <PictureCropper v-model:pic="previewImageBase64" @submit="handlerDialogShow(false)"></PictureCropper> -->
 			<template #footer>
 				<el-button @click="close">取消</el-button>
-				<el-button @click="clear">清除</el-button>
-				<el-button @click="reset">重置</el-button>
+				<el-button @click="cropper.clear()">清除</el-button>
+				<el-button @click="cropper.reset()">重置</el-button>
 				<el-button type="primary" @click="getResult">裁切</el-button>
 			</template>
-
+			<p>dialogWidth{{ dialogWidth }}</p>
 			<!-- 图片裁切插件 -->
 			<VuePictureCropper
-				:img="pic"
+				:img="image"
 				:boxStyle="{
 					width: '100%',
 					height: '100%',
@@ -58,59 +60,76 @@
 import VuePictureCropper, { cropper } from 'vue-picture-cropper'
 import {
 	ref,
-	// unref,
 	computed,
 	reactive,
+	defineProps,
 	defineEmits,
+	defineExpose,
+	// toRefs,
 } from "vue";
 import { PlusElMessage } from "@/utils/loadElement"
 import { UseStoreResize } from "@/stores/window";
 import { storeToRefs } from "pinia";
-import { uploadByIpfs } from "@/config/ipfs"
-import { fileToBase64, getExtensionWithPoint } from "@/utils/file"
-const emits = defineEmits(['update:image'])
+import { uploadImageByIpfs } from "@/config/ipfs"
+import {
+	fileToBase64, getExtensionWithPoint,
+	downloadName, getFileName
+} from "@/utils/file"
+const props = defineProps({
+	Base64: {
+		type: String
+	}
+})
+// const { Base64 } = toRefs(props);
+const emits = defineEmits(['update:Base64'])
+
+
+const image = ref('')
 const accept = '.jpg,.jpeg,.png';
 const acceptList = accept.slice(',')
 const storeResize = UseStoreResize();
 const { isPc } = storeToRefs(storeResize)
-const dialogValue = ref(false);
-const dialogWidth = computed(() => isPc ? '600px' : '90%')
+const dialogHandler = ref(false);
+const dialogWidth = computed(() => isPc.value == true ? '600px' : '90%')
 const showPreview = computed(() => !!result.dataURL)
 const fileSelect = ref(null);
-const pic = ref('')
 const result = reactive({
 	dataURL: '',
 	fileData: '',
+	fileName: '',
 })
+const uploadhandler = computed(() => !!result.fileData)
 /**
  * 获取裁切结果
  */
 const getResult = async () => {
-	// console.log(cropper)
 	// 获取生成的base64图片地址
 	const base64 = cropper.getDataURL()
 	const fileData = await cropper.getFile({
-		fileName: '测试文件名，可不传',
+		fileName: result.fileName,
 	})
-	console.log({ base64 })
 	result.dataURL = base64
 	result.fileData = fileData
-	dialogValue.value = false
+	emits('update:Base64', base64)
+	dialogHandler.value = false
 }
 /**
  * 清除裁切框
+ * cropper.reset()
  */
-const clear = () => {
-	cropper.clear()
-}
 /**
  * 重置默认的裁切区域
+ * cropper.reset()
  */
-const reset = () => {
-	cropper.reset()
+
+
+function resetData() {
+	result.dataURL = ''
+	result.fileData = ''
+	result.fileName =  ''
 }
 function close() {
-	dialogValue.value = false
+	dialogHandler.value = false
 }
 function selectImageFile() {
 	let res = fileSelect.value.dispatchEvent(new MouseEvent('click'))
@@ -133,10 +152,14 @@ async function getFile(e) {
 	const filetype = getExtensionWithPoint(eimageFiles.name)
 	const fileTypeValidator = acceptList.includes(filetype);
 	if (fileTypeValidator) {
-		result.dataURL = ''
-		result.fileData = ''
-		pic.value = await fileToBase64(eimageFiles)
+		resetData()
+		result.fileName = getFileName(downloadName(eimageFiles))
+		console.log(result.fileName)
+		image.value = await fileToBase64(eimageFiles)
+		// const imageBase = await fileToBase64(eimageFiles)
+		// emits('update:image',imageBase)
 		handlerDialogShow(true)
+		clearFiles()
 	} else {
 		PlusElMessage({
 			duration: 0,
@@ -149,32 +172,51 @@ async function getFile(e) {
 
 
 function clearFiles() {
-	// previewImageBase64.value = '';
-	// imageFile.value = '';
 	fileSelect.value.value = '';
 }
 function handlerDialogShow(bool) {
-	typeof (bool) == 'boolean' && (dialogValue.value = bool);
+	typeof (bool) == 'boolean' && (dialogHandler.value = bool);
 }
-async function uploadImageToSomewhere() {
-	let image_file = result.fileData;
-	let res = await uploadByIpfs(image_file)
-	console.log("uploadImageToSomewhere----", res)
-	emits('update:image', res.publicUrl)
-}
+async function upload() {
+	if (uploadhandler.value != true) {
+		return false;
+	} else {
+		console.log("uploadImageToSomewhere----")
+		let image_file = result.fileData;
+		let res = await uploadImageByIpfs(image_file)
+		console.log("uploadImageToSomewhere----", res)
 
+		if(props.Base64) {
+			emits('update:Base64', res.publicUrl)
+		}
+		return res;
+	}
+}
+defineExpose({
+	upload,
+	resetData
+})
 </script>
 <style lang='scss' scoped>
 .upload-image {
 	display: inline-block;
+	vertical-align: bottom;
+	position: relative;
+	width: 94px;
+	height: 94px;
 }
 .file-select {
 	display: none;
 }
 .upload-preview,
 .upload-event-traget {
-	width: 94px;
-	height: 94px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	// width: 94px;
+	// height: 94px;
+	width: 100%;
+	height: 100%;
 	display: grid;
 	place-items: center;
 	background-color: rgba(255, 255, 255, 0.2);
@@ -182,10 +224,10 @@ async function uploadImageToSomewhere() {
 	color: #fff;
 	font-size: 12px;
 	overflow: hidden;
-}
-.upload-event-traget {
 	cursor: pointer;
 }
+// .upload-event-traget {
+// }
 .upload-preview {
 	.preview-image {
 		width: 100%;

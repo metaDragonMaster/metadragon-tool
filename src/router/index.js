@@ -20,6 +20,7 @@ const whitePathList = [
 	'/',
 	'/homepage',
 	'/register',
+	'/demo',
 ]
 router.beforeEach(async (to, from, next) => {
 	const storeWeb3 = UseStoreWeb3js();
@@ -29,6 +30,7 @@ router.beforeEach(async (to, from, next) => {
 	if (!haveAuth && !whitePathList.includes(to.path)) {
 		//没有就去请求
 		try {
+			console.log('try startWeb3')
 			const queryWeb3 = await startWeb3();
 			if (queryWeb3) {
 				next(to.path)

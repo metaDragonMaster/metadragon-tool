@@ -2,7 +2,7 @@
 node_modules
 /.history
 /dist
-/metagame-tool
+/metagame-tool-dist
 
 
 # local env files

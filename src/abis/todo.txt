@@ -5,3 +5,21 @@ get_project_Script_data
 get_project_Script_ids
 get_user_script_state
 get_all_project
+//添加项目
+set_project_data({
+	contract_address
+	name
+	amount
+	url
+})
+//创建脚本
+set_script_data({
+	uint256 _script_amount,
+	uint256 _type,
+	string memory url,
+	uint256 _max,
+	uint256 _project_id_,
+	uint256 amount
+})
+get_project_BNB_AmountOut
+get_script_BNB_AmountOut

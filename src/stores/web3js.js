@@ -1,11 +1,6 @@
 
 import { defineStore } from "pinia";
-import { AbiBNBTest, AddressBNBTest } from '@/abis/abis.js';
-import { getUserAddress } from "@/utils/web3_util";
-import Web3 from 'web3';
-import { ElMessage } from 'element-plus'
-import { lockLoadHandler } from "@/utils/loadElement"
-// const { locale } = useI18n();
+import { useWeb3, startContracts } from "@/hooks/useWeb3"
 export const UseStoreWeb3js = defineStore('Web3js', {
 	state: () => ({
 		_web3: null,
@@ -25,16 +20,15 @@ export const UseStoreWeb3js = defineStore('Web3js', {
 	},
 	actions: {
 		async startWeb3() {
-			const wab3InCode = await userEnable(this.setWeb3, this.setUserAddress);
-			if (wab3InCode) {
-				const useStoreContracts = UseStoreContracts()
-				const { setContracts } = useStoreContracts;
-				const contracts = await startContracts(wab3InCode);
+			const web3InCode = await useWeb3(async (web3Eth, userAddress) => {
+				console.log('用户切换了钱包后的操作')
+				this.setUserAddress(userAddress)
+				this.setWeb3(web3Eth)
+				const { setContracts } = UseStoreContracts();
+				const contracts = await startContracts(web3Eth);
 				setContracts(contracts);
-				return true;
-			} else {
-				return false;
-			}
+			})
+			return !!web3InCode
 		},
 		setWeb3(web3) {
 			this._web3 = web3
@@ -59,62 +53,61 @@ export const UseStoreContracts = defineStore('contracts', {
 			this._Contracts = Contracts
 		},
 	}
-
 })
-async function userEnable(setWeb3, setUserAddress) {
-	const loadHandler = lockLoadHandler('正在获取授权...')
-	try {
-		const web3Provider = window.ethereum;
-		// 请求用户授权
-		web3Provider.enable();
-		// 0x61 测试网络
-		// 0x38 正式网络
-		// if (web3Provider.chainId == '0x38') {
-		const web3 = new Web3(web3Provider); //web3js就是你需要的web3实例
-		console.log("web3js -- 74:web3:",web3);
-		const userAddress = await getUserAddress(web3);
-		console.log("web3js -- 76:", userAddress);
-		if (userAddress.length <= 0) throw new Error();
-		setUserAddress(userAddress)
-		setWeb3(web3)
-		ElMessage({
-			type: 'success',
-			message: 'Authorization success',
-			grouping: true,
-			showClose: true,
-		})
-		console.log("userEnable",web3)
-		loadHandler.close()
-		return web3
-		// } else {
-		//     ElMessage({
-		//         duration: 0,
-		//         type: 'error',
-		//         showClose: true,
-		//         grouping: true,
-		//         message: 'Please switch the BSC network'
-		//     })
-		// }
-	} catch (error) {
-		// 用户不授权时
-		// console.error('User denied accoun t access');
-		ElMessage({
-			duration: 0,
-			type: 'error',
-			showClose: true,
-			grouping: true,
-			message: 'User denied account access'
-		})
-		loadHandler.close()
-		throw new Error(error);
-	}
-}
-function getContract(web3, abi, abiAddress) {
-	return new web3.eth.Contract(abi, abiAddress)
-}
-async function startContracts(web3) {
-	const BNBContract = await getContract(web3, AbiBNBTest, AddressBNBTest);
-	return {
-		BNBContract
-	}
-}
+// async function userEnable(setWeb3, setUserAddress) {
+// 	const loadHandler = lockLoadHandler('正在获取授权...')
+// 	try {
+// 		const web3Provider = window.ethereum;
+// 		// 请求用户授权
+// 		web3Provider.enable();
+// 		// 0x61 测试网络
+// 		// 0x38 正式网络
+// 		// if (web3Provider.chainId == '0x38') {
+// 		const web3 = new Web3(web3Provider); //web3js就是你需要的web3实例
+// 		console.log("web3js -- 74:web3:",web3);
+// 		const userAddress = await getUserAddress(web3);
+// 		console.log("web3js -- 76:", userAddress);
+// 		if (userAddress.length <= 0) throw new Error();
+// 		setUserAddress(userAddress)
+// 		setWeb3(web3)
+// 		ElMessage({
+// 			type: 'success',
+// 			message: 'Authorization success',
+// 			grouping: true,
+// 			showClose: true,
+// 		})
+// 		console.log("userEnable",web3)
+// 		loadHandler.close()
+// 		return web3
+// 		// } else {
+// 		//     ElMessage({
+// 		//         duration: 0,
+// 		//         type: 'error',
+// 		//         showClose: true,
+// 		//         grouping: true,
+// 		//         message: 'Please switch the BSC network'
+// 		//     })
+// 		// }
+// 	} catch (error) {
+// 		// 用户不授权时
+// 		// console.error('User denied accoun t access');
+// 		ElMessage({
+// 			duration: 0,
+// 			type: 'error',
+// 			showClose: true,
+// 			grouping: true,
+// 			message: 'User denied account access'
+// 		})
+// 		loadHandler.close()
+// 		throw new Error(error);
+// 	}
+// }
+// function getContract(web3, abi, abiAddress) {
+// 	return new web3.eth.Contract(abi, abiAddress)
+// }
+// async function startContracts(web3) {
+// 	const BNBContract = await getContract(web3, AbiBNBTest, AddressBNBTest);
+// 	return {
+// 		BNBContract
+// 	}
+// }

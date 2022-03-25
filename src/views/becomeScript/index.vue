@@ -31,9 +31,9 @@
 				></ThemeRadioGroup>
 				<router-view v-slot="{ Component, route }">
 					<transition name="el-zoom-in-center" mode="out-in">
-						<keep-alive>
+						<!-- <keep-alive> -->
 							<component :is="Component" :key="route.name"></component>
-						</keep-alive>
+						<!-- </keep-alive> -->
 					</transition>
 				</router-view>
 			</el-col>

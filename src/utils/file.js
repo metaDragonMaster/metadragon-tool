@@ -14,10 +14,13 @@ export function getExtension(name) {
 }
 //生成下载文件名
 export function downloadName(file) {
-	let fileName = file.raw.name || file.name;
+
+	let fileName = file.raw ? file.raw.name : file.name;
+	console.log(fileName)
 	let md5Name = hex_md5(fileName)
 	let name = `${new Date().getTime().toString()}-${md5Name}-${fileName}`
 	return name;
+	// return fileName
 }
 export function fileToBase64(file) {
 	return new Promise(function (resolve, reject) {

@@ -42,6 +42,7 @@ export const lockLoadHandler = (text) => {
 }
 export const PlusElMessage = (option) => {
 	return ElMessage({
+		duration: option.type == 'error'? 0 : 3000,
 		grouping: true,
 		showClose: true,
 		...option

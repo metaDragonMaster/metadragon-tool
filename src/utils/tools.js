@@ -171,3 +171,14 @@ export const fileToUrl = function(file) {
 	window.URL.revokeObjectURL(url);
 	return url;
 }
+//生成验证码
+export const getValidCode = function(len) { /*len 长度*/
+	let strSource = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz' + '0123456789';
+	let res = '',
+		idx = 0;
+	for (let i = 0; i < len; i++) {
+		idx = Math.floor(Math.random() * strSource.length);
+		res += strSource.substring(idx, idx + 1);
+	}
+	return res;
+}

@@ -33,10 +33,9 @@ import {
 	// defineEmits,
 	defineProps,
 	onMounted,
-	watch,
 	// isRef,
 	toRefs,
-	ref,
+	// ref,
 	onBeforeUnmount
 	// watchEffect,
 	// reactive,
@@ -79,8 +78,10 @@ const {
 	handlerScriptDataLoading,
 	removeProjectData,
 	removeScriptData,
+	setCurrentProjectId,
 } = storeProjectScriptData;
-onBeforeUnmount(()=> {
+const { currentProjectId } = storeToRefs(storeProjectScriptData)
+onBeforeUnmount(() => {
 	//页面注销前先清除数据
 	removeProjectData()
 	removeScriptData()
@@ -95,48 +96,38 @@ const {
 // 	scriptData.value,
 // 	projectData.value
 // );
-const currentActiveId = ref('');
 const activeType = (item) => {
 	if (!item._f) return 'disabled';
-	return currentActiveId.value == item.id ? 'square' : 'blur';
+	return currentProjectId.value == item.id ? 'square' : 'blur';
 }
 onMounted(() => {
 	startProjectToSelectList()
 })
-watch(() => projectData.value, (n) => {
-	if (n.length > 0) {
-		startProjectActive()
-	}
-})
-function projectToObject(project) { //把项目转换成对象
-	return ArrayKeysToObject(project, projectKeyInterface)
-}
-function scriptToObject(script) {
-	return ArrayKeysToObject(script, scriptKeyInterface)
-}
+// watch(() => projectData.value, (n,o) => {
+// 	if (n.length > 0&&!o) {
+// 		startProjectActive()
+// 	}
+// })
 
 const startProjectToSelectList = async () => {
 	// console.log("stopCreate ---", stopCreate.value)
 	if (!stopCreate.value) {
 		const data = await getAllProject();
 		setProjectData(data)
+		if(data[0]) {
+			changeProject(data[0])
+		}
 	}
 }
-function startProjectActive() {
-	if (projectData.value[0]) {
-		changeProject(projectData.value[0])
-	}
-}
-// function getCurrentProject(key, keyAttr = 'id') {
-// 	return projectData.value.filter(item => item[keyAttr] == key)[0] || {}
-// }
+
 async function changeProject(project) {
 	if (project._f != true) {
 		return;
 	}
 	removeScriptData();//切换项目时先注销脚本列表
 	// console.log('select game changeProject', project);
-	currentActiveId.value = project.id;
+	setCurrentProjectId(project.id)
+
 	// let scriptData;
 	if (!stopSelectScript.value) {
 		const scriptDataToGet = await getProjectScriptData(project.id);
@@ -156,7 +147,7 @@ async function getAllProject() {
 		console.log("项目列表", projects);
 		handlerProjectDataLoading(false);
 		if (projects) {
-			const list = projects.map(item => projectToObject(item));
+			const list = projects.map(item => ArrayKeysToObject(item, projectKeyInterface));
 			// console.log(list);
 			return list
 		}
@@ -179,7 +170,7 @@ async function getProjectScriptData(project_id) {
 		console.log("项目脚本列表", scripts);
 		handlerScriptDataLoading(false)
 		if (scripts) {
-			const list = scripts.map(item => scriptToObject(item));
+			const list = scripts.map(item => ArrayKeysToObject(item, scriptKeyInterface));
 			// console.log(list);
 			return list
 		}
